@@ -32,15 +32,18 @@ const COIN_DATA = {
         }
     },
     SOL: {
-        name: 'Solana Coin',
+        name: 'Solana',
         symbol: 'SOL',
         mainUnit: 'SOL',
         geckoId: 'solana',
         addressFormat: 'solana',
         units: {
-            'micro lamports': { value: 1, description: '最小单位'},
-            'lamports': { value: 1e6, description: '最小单位' },
-            'SOL': { value: 1e15, description: 'SOL主单位' }
+            'lamport': { value: 1, description: '最小单位，以Leslie Lamport命名' },
+            'microSOL': { value: 1e3, description: '微Solana' },
+            'milliSOL': { value: 1e6, description: '毫Solana' },
+            'centiSOL': { value: 1e7, description: '厘Solana' },
+            'deciSOL': { value: 1e8, description: '分Solana' },
+            'SOL': { value: 1e9, description: 'Solana主单位' }
         }
     },
     BNB: {
@@ -55,13 +58,17 @@ const COIN_DATA = {
         }
     },
     XRP: {
-        name: 'Ripple Coin',
+        name: 'XRP Ledger',
         symbol: 'XRP',
         mainUnit: 'XRP',
         geckoId: 'ripple',
         addressFormat: 'ripple',
         units: {
-            'drop': { value: 1, description: '最小单位'},
+            'drop': { value: 1, description: '最小单位，一滴' },
+            'microXRP': { value: 1e3, description: '微XRP' },
+            'milliXRP': { value: 1e3, description: '毫XRP' },
+            'centiXRP': { value: 1e4, description: '厘XRP' },
+            'deciXRP': { value: 1e5, description: '分XRP' },
             'XRP': { value: 1e6, description: 'XRP主单位' }
         }
     },
