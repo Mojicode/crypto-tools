@@ -53,22 +53,116 @@ function showTab(tabName) {
 }
 
 // 工具函数
-function formatNumber(num) {
+// function formatNumber(num) {
+//     if (num === 0) return '0';
+    
+//     if (num >= 1e15 || (num < 1e-6 && num > 0)) {
+//         return num.toExponential(6);
+//     }
+    
+//     if (num < 1) {
+//         return num.toPrecision(8).replace(/\.?0+$/, '');
+//     }
+    
+//     if (num >= 1000 && Number.isInteger(num)) {
+//         return num.toLocaleString();
+//     }
+    
+//     return num.toString();
+// }
+// 增强版 formatNumber 函数
+function formatNumber(num, options = {}) {
+    const {
+        maxDecimalPlaces = null,  // 最大小数位数，null表示不限制
+        trimTrailingZeros = true  // 是否去掉末尾的零
+    } = options;
+    
     if (num === 0) return '0';
     
-    if (num >= 1e15 || (num < 1e-6 && num > 0)) {
-        return num.toExponential(6);
+    // 展开科学计数法
+    let numStr = expandScientificNotation(num);
+    
+    // 分离整数和小数部分
+    const parts = numStr.split('.');
+    let integerPart = parts[0];
+    let decimalPart = parts[1] || '';
+    
+    // 处理小数位数限制
+    if (maxDecimalPlaces !== null && decimalPart.length > maxDecimalPlaces) {
+        decimalPart = decimalPart.slice(0, maxDecimalPlaces);
     }
     
-    if (num < 1) {
-        return num.toPrecision(8).replace(/\.?0+$/, '');
+    // 去掉末尾的零
+    if (trimTrailingZeros && decimalPart) {
+        decimalPart = decimalPart.replace(/0+$/, '');
     }
     
-    if (num >= 1000 && Number.isInteger(num)) {
-        return num.toLocaleString();
+    // 为整数部分添加逗号分隔
+    const formattedInteger = addCommas(integerPart);
+    
+    // 组合结果
+    if (decimalPart) {
+        return formattedInteger + '.' + decimalPart;
+    } else {
+        return formattedInteger;
+    }
+}
+// 展开科学计数法
+function expandScientificNotation(num) {
+    const str = num.toString();
+    
+    if (!str.includes('e')) {
+        return str;
     }
     
-    return num.toString();
+    const [base, exponent] = str.split('e');
+    const exp = parseInt(exponent, 10);
+    const [intPart, decPart = ''] = base.split('.');
+    
+    if (exp > 0) {
+        // 正指数：向右移动小数点
+        const totalDigits = intPart + decPart;
+        const newDecimalPos = 1 + exp;
+        
+        if (newDecimalPos >= totalDigits.length) {
+            // 需要补零
+            return totalDigits + '0'.repeat(newDecimalPos - totalDigits.length);
+        } else {
+            // 插入小数点
+            return totalDigits.slice(0, newDecimalPos) + '.' + totalDigits.slice(newDecimalPos);
+        }
+    } else {
+        // 负指数：向左移动小数点
+        const absExp = Math.abs(exp);
+        const totalDigits = intPart + decPart;
+        
+        if (absExp > 0) {
+            return '0.' + '0'.repeat(absExp - 1) + totalDigits;
+        } else {
+            return totalDigits;
+        }
+    }
+}
+
+// 为数字添加逗号分隔
+function addCommas(numStr) {
+    // 处理负号
+    const isNegative = numStr.startsWith('-');
+    const positiveNumStr = isNegative ? numStr.slice(1) : numStr;
+    
+    // 从右到左每三位添加逗号
+    const reversed = positiveNumStr.split('').reverse();
+    const withCommas = [];
+    
+    for (let i = 0; i < reversed.length; i++) {
+        if (i > 0 && i % 3 === 0) {
+            withCommas.push(',');
+        }
+        withCommas.push(reversed[i]);
+    }
+    
+    const result = withCommas.reverse().join('');
+    return isNegative ? '-' + result : result;
 }
 
 function formatCurrency(amount) {
