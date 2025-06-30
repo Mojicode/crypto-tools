@@ -27,6 +27,7 @@ function processAddress() {
     `;
 }
 
+// 在 detectAddressType 函数中添加新的地址类型检测
 function detectAddressType(address) {
     if (address.startsWith('0x') && address.length === 42) {
         return 'Ethereum';
@@ -36,12 +37,17 @@ function detectAddressType(address) {
         return 'Binance Chain';
     } else if (address.startsWith('addr1')) {
         return 'Cardano';
-    } else if (address.length === 48) {
+    } else if (address.length === 48 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(address)) {
         return 'Polkadot';
+    } else if (address.length >= 32 && address.length <= 44 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(address)) {
+        return 'Solana';
+    } else if (address.startsWith('r') && address.length >= 25 && address.length <= 34) {
+        return 'XRP';
     }
     return '未知';
 }
 
+// 在 validateAddress 函数中添加新的验证逻辑
 function validateAddress(address, type) {
     try {
         switch (type) {
@@ -54,7 +60,11 @@ function validateAddress(address, type) {
             case 'Cardano':
                 return address.startsWith('addr1') && address.length >= 100;
             case 'Polkadot':
-                return address.length === 48;
+                return address.length === 48 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(address);
+            case 'Solana':
+                return address.length >= 32 && address.length <= 44 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(address);
+            case 'XRP':
+                return address.startsWith('r') && address.length >= 25 && address.length <= 34 && /^r[1-9A-HJ-NP-Za-km-z]{24,33}$/.test(address);
             default:
                 return false;
         }
