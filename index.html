@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Coin Tools</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="bi bi-currency-bitcoin"></i> Crypto Tools</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="showTab('converter')">
+                            <i class="bi bi-arrow-left-right"></i> 单位转换
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showTab('address')">
+                            <i class="bi bi-wallet2"></i> 地址工具
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showTab('price')">
+                            <i class="bi bi-graph-up-arrow"></i> 价格查询
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container my-5">
+        <!-- Unit Converter Tab -->
+        <div id="converter-tab" class="tab-content active">
+            <div class="card shadow-lg">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h3 class="card-title mb-0"><i class="bi bi-arrow-left-right"></i> 加密货币单位转换</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="coinSelect" class="form-label">选择币种</label>
+                                <select id="coinSelect" class="form-select" onchange="updateUnits()">
+                                    <option value="">请选择币种</option>
+                                </select>
+                            </div>
+                            
+                            <div id="converterSection" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="fromAmount" class="form-label">输入数量</label>
+                                            <input type="number" id="fromAmount" class="form-control" 
+                                                   placeholder="输入数量" oninput="convert()">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="fromUnit" class="form-label">从单位</label>
+                                            <select id="fromUnit" class="form-select" onchange="convert()">
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="toAmount" class="form-label">转换结果</label>
+                                            <input type="text" id="toAmount" class="form-control" 
+                                                   readonly placeholder="转换结果">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="toUnit" class="form-label">到单位</label>
+                                            <select id="toUnit" class="form-select" onchange="convert()">
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div id="priceDisplay" class="card bg-light" style="display: none;">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">实时价格</h5>
+                                    <div id="currentPrice" class="h4 text-primary">-</div>
+                                    <small class="text-muted">数据来源: CoinGecko</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Units Table -->
+                    <div id="unitsTable" class="mt-4" style="display: none;">
+                        <h5 id="unitsTableTitle">单位换算表</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>单位名称</th>
+                                        <th>与主单位换算</th>
+                                        <th>描述</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="unitsTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Address Tools Tab -->
+        <div id="address-tab" class="tab-content">
+            <div class="card shadow-lg">
+                <div class="card-header bg-gradient-success text-white">
+                    <h3 class="card-title mb-0"><i class="bi bi-wallet2"></i> 地址工具</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addressInput" class="form-label">输入地址</label>
+                                <textarea id="addressInput" class="form-control" rows="3" 
+                                          placeholder="输入加密货币地址" oninput="processAddress()"></textarea>
+                            </div>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-primary" onclick="convertToLowercase()">
+                                    转小写
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="convertToUppercase()">
+                                    转大写
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="convertToChecksum()">
+                                    校验和格式
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addressOutput" class="form-label">转换结果</label>
+                                <textarea id="addressOutput" class="form-control" rows="3" readonly></textarea>
+                            </div>
+                            <div id="addressInfo" class="alert alert-info" style="display: none;">
+                                <h6>地址信息</h6>
+                                <div id="addressDetails"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Price Query Tab -->
+        <div id="price-tab" class="tab-content">
+            <div class="card shadow-lg">
+                <div class="card-header bg-gradient-warning text-white">
+                    <h3 class="card-title mb-0"><i class="bi bi-graph-up-arrow"></i> 价格查询</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="priceSelect" class="form-label">选择币种</label>
+                                <select id="priceSelect" class="form-select" onchange="fetchPrice()">
+                                    <option value="">请选择币种</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div id="priceInfo" class="row" style="display: none;">
+                                <div class="col-md-4">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h5 class="card-title">当前价格</h5>
+                                            <p class="card-text h4" id="currentPriceUSD">-</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h5 class="card-title">24h 变化</h5>
+                                            <p class="card-text h4" id="priceChange24h">-</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h5 class="card-title">市值</h5>
+                                            <p class="card-text h4" id="marketCap">-</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container text-center">
+            <p>&copy; 2024 Crypto Tools. Made with ❤️ for the crypto community.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Crypto JS for checksum addresses -->
+    <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="data/coinData.js"></script>
+    <script src="js/converter.js"></script>
+    <script src="js/addressUtils.js"></script>
+    <script src="js/priceApi.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
