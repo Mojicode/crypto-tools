@@ -31,6 +31,18 @@ const COIN_DATA = {
             'BTC': { value: 1e8, description: '比特币主单位' }
         }
     },
+    SOL: {
+        name: 'Solana Coin',
+        symbol: 'SOL',
+        mainUnit: 'SOL',
+        geckoId: 'solana',
+        addressFormat: 'solana',
+        units: {
+            'micro lamports': { value: 1, description: '最小单位'},
+            'lamports': { value: 1e6, description: '最小单位' },
+            'SOL': { value: 1e15, description: 'SOL主单位' }
+        }
+    },
     BNB: {
         name: 'Binance Coin',
         symbol: 'BNB',
@@ -40,6 +52,17 @@ const COIN_DATA = {
         units: {
             'jager': { value: 1, description: '最小单位' },
             'BNB': { value: 1e8, description: 'BNB主单位' }
+        }
+    },
+    XRP: {
+        name: 'Ripple Coin',
+        symbol: 'XRP',
+        mainUnit: 'XRP',
+        geckoId: 'ripple',
+        addressFormat: 'ripple',
+        units: {
+            'drop': { value: 1, description: '最小单位'},
+            'XRP': { value: 1e6, description: 'XRP主单位' }
         }
     },
     ADA: {
