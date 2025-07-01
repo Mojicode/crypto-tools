@@ -107,10 +107,101 @@ function formatNumber(num, options = {}) {
         return formattedInteger;
     }
 }
-// 展开科学计数法
-function expandScientificNotation(num) {
-    const str = num.toString();
+// 改进的格式化函数
+function formatNumber(num) {
+    if (num === 0 || num === '0') return '0';
     
+    // 处理字符串输入
+    let numStr = typeof num === 'string' ? num : num.toString();
+    
+    // 处理负数
+    const isNegative = numStr.startsWith('-');
+    if (isNegative) {
+        numStr = numStr.slice(1);
+    }
+    
+    // 展开科学计数法
+    if (numStr.includes('e')) {
+        numStr = expandScientificNotation(parseFloat(numStr)).toString();
+    }
+    
+    // 移除多余的小数位零
+    if (numStr.includes('.')) {
+        numStr = numStr.replace(/\.?0+$/, '');
+    }
+    
+    // 分离整数和小数部分
+    const parts = numStr.split('.');
+    const integerPart = parts[0];
+    const decimalPart = parts[1] || '';
+    
+    // 为整数部分添加逗号分隔，但避免过度处理超长数字
+    let formattedInteger;
+    if (integerPart.length > 50) {
+        // 对于超长数字，分段处理
+        formattedInteger = addCommasToLongNumber(integerPart);
+    } else {
+        formattedInteger = addCommas(integerPart);
+    }
+    
+    // 组合结果
+    let result = formattedInteger;
+    if (decimalPart) {
+        // 限制小数位数显示，避免过长
+        const maxDecimalPlaces = 18;
+        const trimmedDecimal = decimalPart.length > maxDecimalPlaces 
+            ? decimalPart.slice(0, maxDecimalPlaces) + '...'
+            : decimalPart;
+        result = formattedInteger + '.' + trimmedDecimal;
+    }
+    
+    return isNegative ? '-' + result : result;
+}
+// 展开科学计数法
+// function expandScientificNotation(num) {
+//     const str = num.toString();
+    
+//     if (!str.includes('e')) {
+//         return str;
+//     }
+    
+//     const [base, exponent] = str.split('e');
+//     const exp = parseInt(exponent, 10);
+//     const [intPart, decPart = ''] = base.split('.');
+    
+//     if (exp > 0) {
+//         // 正指数：向右移动小数点
+//         const totalDigits = intPart + decPart;
+//         const newDecimalPos = 1 + exp;
+        
+//         if (newDecimalPos >= totalDigits.length) {
+//             // 需要补零
+//             return totalDigits + '0'.repeat(newDecimalPos - totalDigits.length);
+//         } else {
+//             // 插入小数点
+//             return totalDigits.slice(0, newDecimalPos) + '.' + totalDigits.slice(newDecimalPos);
+//         }
+//     } else {
+//         // 负指数：向左移动小数点
+//         const absExp = Math.abs(exp);
+//         const totalDigits = intPart + decPart;
+        
+//         if (absExp > 0) {
+//             return '0.' + '0'.repeat(absExp - 1) + totalDigits;
+//         } else {
+//             return totalDigits;
+//         }
+//     }
+// }
+
+// 改进的科学计数法展开函数
+function expandScientificNotation(num) {
+    if (Math.abs(num) < 1e-15 || Math.abs(num) > 1e20) {
+        // 对于极小或极大的数，使用特殊处理
+        return num.toPrecision(15).replace(/\.?0+e/, 'e');
+    }
+    
+    const str = num.toString();
     if (!str.includes('e')) {
         return str;
     }
@@ -120,27 +211,18 @@ function expandScientificNotation(num) {
     const [intPart, decPart = ''] = base.split('.');
     
     if (exp > 0) {
-        // 正指数：向右移动小数点
         const totalDigits = intPart + decPart;
         const newDecimalPos = 1 + exp;
         
         if (newDecimalPos >= totalDigits.length) {
-            // 需要补零
             return totalDigits + '0'.repeat(newDecimalPos - totalDigits.length);
         } else {
-            // 插入小数点
             return totalDigits.slice(0, newDecimalPos) + '.' + totalDigits.slice(newDecimalPos);
         }
     } else {
-        // 负指数：向左移动小数点
         const absExp = Math.abs(exp);
         const totalDigits = intPart + decPart;
-        
-        if (absExp > 0) {
-            return '0.' + '0'.repeat(absExp - 1) + totalDigits;
-        } else {
-            return totalDigits;
-        }
+        return '0.' + '0'.repeat(absExp - 1) + totalDigits;
     }
 }
 
@@ -163,6 +245,23 @@ function addCommas(numStr) {
     
     const result = withCommas.reverse().join('');
     return isNegative ? '-' + result : result;
+}
+// 处理超长数字的逗号分隔
+function addCommasToLongNumber(numStr) {
+    const chunks = [];
+    let remaining = numStr;
+    
+    // 从右到左每3位分组
+    while (remaining.length > 3) {
+        chunks.unshift(remaining.slice(-3));
+        remaining = remaining.slice(0, -3);
+    }
+    
+    if (remaining.length > 0) {
+        chunks.unshift(remaining);
+    }
+    
+    return chunks.join(',');
 }
 
 function formatCurrency(amount) {
