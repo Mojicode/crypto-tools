@@ -45,24 +45,173 @@ function populateUnitSelects(coinType) {
     toUnit.value = Object.keys(units)[0]; // 最小单位
 }
 
+// function convert() {
+//     const selectedCoin = document.getElementById('coinSelect').value;
+//     if (!selectedCoin) return;
+    
+//     const fromAmount = parseFloat(document.getElementById('fromAmount').value) || 0;
+//     const fromUnit = document.getElementById('fromUnit').value;
+//     const toUnit = document.getElementById('toUnit').value;
+    
+//     if (!fromUnit || !toUnit) return;
+    
+//     const units = COIN_DATA[selectedCoin].units;
+//     const fromValue = units[fromUnit].value;
+//     const toValue = units[toUnit].value;
+    
+//     // 转换逻辑：先转为最小单位，再转为目标单位
+//     const result = (fromAmount * fromValue) / toValue;
+    
+//     document.getElementById('toAmount').value = formatNumber(result);
+// }
+
+// 使用高精度计算的转换函数
 function convert() {
     const selectedCoin = document.getElementById('coinSelect').value;
     if (!selectedCoin) return;
     
-    const fromAmount = parseFloat(document.getElementById('fromAmount').value) || 0;
+    const fromAmount = document.getElementById('fromAmount').value;
     const fromUnit = document.getElementById('fromUnit').value;
     const toUnit = document.getElementById('toUnit').value;
     
-    if (!fromUnit || !toUnit) return;
+    if (!fromAmount || !fromUnit || !toUnit || fromAmount === '') {
+        document.getElementById('toAmount').value = '';
+        return;
+    }
+    
+    // 验证输入是否为有效数字
+    if (isNaN(fromAmount) || parseFloat(fromAmount) < 0) {
+        document.getElementById('toAmount').value = '请输入有效数字';
+        return;
+    }
     
     const units = COIN_DATA[selectedCoin].units;
     const fromValue = units[fromUnit].value;
     const toValue = units[toUnit].value;
     
-    // 转换逻辑：先转为最小单位，再转为目标单位
-    const result = (fromAmount * fromValue) / toValue;
+    try {
+        // 使用字符串计算避免精度问题
+        const result = calculateConversion(fromAmount, fromValue, toValue);
+        document.getElementById('toAmount').value = formatNumber(result);
+    } catch (error) {
+        console.error('转换计算错误:', error);
+        document.getElementById('toAmount').value = '计算错误';
+    }
+}
+
+// 高精度计算函数
+function calculateConversion(amount, fromRate, toRate) {
+    // 将所有数字转换为字符串进行精确计算
+    const amountStr = amount.toString();
+    const fromRateStr = fromRate.toString();
+    const toRateStr = toRate.toString();
     
-    document.getElementById('toAmount').value = formatNumber(result);
+    // 如果涉及大数计算，使用BigNumber处理
+    if (fromRate >= 1e15 || toRate >= 1e15 || parseFloat(amount) * fromRate >= 1e15) {
+        return calculateWithBigNumber(amountStr, fromRateStr, toRateStr);
+    } else {
+        // 对于较小的数，使用改进的浮点数计算
+        return calculateWithPrecision(parseFloat(amount), fromRate, toRate);
+    }
+}
+
+// 使用BigNumber进行精确计算（模拟实现）
+function calculateWithBigNumber(amount, fromRate, toRate) {
+    // 简化的BigNumber实现
+    const multiply = (a, b) => {
+        const aStr = a.toString();
+        const bStr = b.toString();
+        
+        // 获取小数位数
+        const aDecimals = (aStr.split('.')[1] || '').length;
+        const bDecimals = (bStr.split('.')[1] || '').length;
+        const totalDecimals = aDecimals + bDecimals;
+        
+        // 转换为整数计算
+        const aInt = parseInt(aStr.replace('.', ''));
+        const bInt = parseInt(bStr.replace('.', ''));
+        
+        const result = aInt * bInt;
+        
+        if (totalDecimals === 0) {
+            return result.toString();
+        }
+        
+        const resultStr = result.toString();
+        if (resultStr.length <= totalDecimals) {
+            return '0.' + '0'.repeat(totalDecimals - resultStr.length) + resultStr;
+        }
+        
+        const intPart = resultStr.slice(0, -totalDecimals);
+        const decPart = resultStr.slice(-totalDecimals);
+        return intPart + '.' + decPart.replace(/0+$/, '');
+    };
+    
+    const divide = (a, b) => {
+        // 简化的除法实现
+        const aNum = parseFloat(a);
+        const bNum = parseFloat(b);
+        
+        if (bNum === 0) return '0';
+        
+        // 对于整数除法，直接计算
+        if (aNum % bNum === 0) {
+            return (aNum / bNum).toString();
+        }
+        
+        // 使用长除法获得更精确的结果
+        const quotient = Math.floor(aNum / bNum);
+        let remainder = aNum - quotient * bNum;
+        let decimal = '';
+        let decimalPlaces = 0;
+        const maxDecimalPlaces = 18;
+        
+        while (remainder !== 0 && decimalPlaces < maxDecimalPlaces) {
+            remainder *= 10;
+            const digit = Math.floor(remainder / bNum);
+            decimal += digit.toString();
+            remainder = remainder - digit * bNum;
+            decimalPlaces++;
+        }
+        
+        if (decimal === '') {
+            return quotient.toString();
+        }
+        
+        return quotient.toString() + '.' + decimal.replace(/0+$/, '');
+    };
+    
+    const product = multiply(amount, fromRate);
+    return divide(product, toRate);
+}
+
+// 改进的精度计算
+function calculateWithPrecision(amount, fromRate, toRate) {
+    // 确定所需的精度
+    const precision = Math.max(
+        getPrecision(amount),
+        getPrecision(fromRate),
+        getPrecision(toRate)
+    ) + 6; // 额外增加6位精度
+    
+    // 使用更高精度的计算
+    const factor = Math.pow(10, precision);
+    const amountInt = Math.round(amount * factor);
+    const fromRateInt = Math.round(fromRate * factor);
+    const toRateInt = Math.round(toRate * factor);
+    
+    // 计算: (amount * fromRate) / toRate
+    const numerator = (amountInt * fromRateInt) / factor; // 这里除以一个factor是因为我们乘了两次
+    const result = numerator / toRateInt * factor;
+    
+    return result;
+}
+
+// 获取数字的精度（小数位数）
+function getPrecision(num) {
+    const str = num.toString();
+    if (str.indexOf('.') === -1) return 0;
+    return str.split('.')[1].length;
 }
 
 function updateUnitsTable(coinType) {
@@ -105,4 +254,27 @@ async function fetchCoinPrice(coinSymbol) {
         console.error('获取价格失败:', error);
         priceElement.textContent = '获取失败';
     }
+}
+
+// 在 js/converter.js 中添加输入验证
+function validateInput(input) {
+    const value = input.value;
+    
+    // 移除非数字字符（除了小数点）
+    const cleanValue = value.replace(/[^\d.-]/g, '');
+    
+    // 确保只有一个小数点
+    const parts = cleanValue.split('.');
+    if (parts.length > 2) {
+        input.value = parts[0] + '.' + parts.slice(1).join('');
+        return;
+    }
+    
+    // 确保负号只在开头
+    if (cleanValue.indexOf('-') > 0) {
+        input.value = cleanValue.replace(/-/g, '');
+        return;
+    }
+    
+    input.value = cleanValue;
 }
